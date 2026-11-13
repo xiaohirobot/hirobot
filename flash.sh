@@ -3,8 +3,8 @@
 # 下载前：BOOT0 接到 3.3V，按一次 RESET。
 # 下载后：BOOT0 拨回 GND，再按一次 RESET。
 # 验收：串口打开 /dev/cu.usbserial-1110，115200 8N1。
-# 当前 main 跑舵机演示，应看到 servo PA2 TIM2_CH3，以及 pulse N。
-# PA2 为 50Hz PWM，脉宽在 500~2500us 间往复。看输出时用 8N1。
+# 当前 main 跑两路舵机：PA2 TIM2_CH3、PA3 TIM2_CH4，串口应看到 pulse N。
+# 两路都是 50Hz PWM，脉宽在 500~2500us 间一起往复。看输出时用 8N1。
 # Bootloader 的偶校验只在本次下载里由编程器处理。
 set -eu
 
