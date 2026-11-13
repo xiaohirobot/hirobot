@@ -19,7 +19,8 @@ LDFLAGS := -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -nostdlib \
 
 SRCS    := src/startup.c src/main.c \
            src/components/delay.c src/components/uart3.c src/components/servo.c \
-           src/demos/demo_uart3_log.c src/demos/demo_servo.c
+           src/components/spi1.c \
+           src/demos/demo_uart3_log.c src/demos/demo_servo.c src/demos/demo_spi.c
 OBJS    := $(addprefix $(BUILD)/,$(notdir $(SRCS:.c=.o)))
 
 vpath %.c src src/components src/demos
