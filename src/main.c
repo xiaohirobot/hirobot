@@ -3,20 +3,21 @@
 /*
  * STM32F407VET6 串口 Hello World。
  * 时钟：复位后的内部 HSI 16 MHz。
- * 串口：USART1，PA9 = TX，PA10 = RX，115200 8N1。
+ * 串口：USART3，PB10 = TX，PB11 = RX，115200 8N1。
+ * 这块板的 CH340 接在 USART3 上。USART3 在 APB1，复位后同样是 16 MHz。
  * 16 MHz / 115200 时 BRR = 0x8B。
  */
 
 #define RCC_AHB1ENR  (*(volatile uint32_t *)0x40023830UL)
-#define RCC_APB2ENR  (*(volatile uint32_t *)0x40023844UL)
+#define RCC_APB1ENR  (*(volatile uint32_t *)0x40023840UL)
 
-#define GPIOA_MODER  (*(volatile uint32_t *)0x40020000UL)
-#define GPIOA_AFRH   (*(volatile uint32_t *)0x40020024UL)
+#define GPIOB_MODER  (*(volatile uint32_t *)0x40020400UL)
+#define GPIOB_AFRH   (*(volatile uint32_t *)0x40020424UL)
 
-#define USART1_SR    (*(volatile uint32_t *)0x40011000UL)
-#define USART1_DR    (*(volatile uint32_t *)0x40011004UL)
-#define USART1_BRR   (*(volatile uint32_t *)0x40011008UL)
-#define USART1_CR1   (*(volatile uint32_t *)0x4001100CUL)
+#define USART3_SR    (*(volatile uint32_t *)0x40004800UL)
+#define USART3_DR    (*(volatile uint32_t *)0x40004804UL)
+#define USART3_BRR   (*(volatile uint32_t *)0x40004808UL)
+#define USART3_CR1   (*(volatile uint32_t *)0x4000480CUL)
 
 #define USART_SR_TXE (1U << 7)
 #define USART_CR1_UE (1U << 13)
@@ -29,9 +30,9 @@
 
 static void uart_putc(char c)
 {
-    while ((USART1_SR & USART_SR_TXE) == 0) {
+    while ((USART3_SR & USART_SR_TXE) == 0) {
     }
-    USART1_DR = (uint8_t)c;
+    USART3_DR = (uint8_t)c;
 }
 
 static void uart_puts(const char *s)
@@ -65,19 +66,20 @@ static void uart_putu(unsigned value)
 
 static void uart_init(void)
 {
-    RCC_AHB1ENR |= 1U << 0; /* GPIOAEN */
-    RCC_APB2ENR |= 1U << 4; /* USART1EN */
+    RCC_AHB1ENR |= 1U << 1;  /* GPIOBEN */
+    RCC_APB1ENR |= 1U << 18; /* USART3EN */
     (void)RCC_AHB1ENR;
-    (void)RCC_APB2ENR;
+    (void)RCC_APB1ENR;
 
-    /* PA9、PA10 设为复用功能 AF7（USART1）。 */
-    GPIOA_MODER &= ~((3U << (9U * 2U)) | (3U << (10U * 2U)));
-    GPIOA_MODER |= (2U << (9U * 2U)) | (2U << (10U * 2U));
-    GPIOA_AFRH &= ~((0xFU << 4) | (0xFU << 8));
-    GPIOA_AFRH |= (7U << 4) | (7U << 8);
+    /* PB10、PB11 设为复用功能 AF7（USART3）。 */
+    GPIOB_MODER &= ~((3U << (10U * 2U)) | (3U << (11U * 2U)));
+    GPIOB_MODER |= (2U << (10U * 2U)) | (2U << (11U * 2U));
+    GPIOB_AFRH &= ~((0xFU << 8) | (0xFU << 12));
+    GPIOB_AFRH |= (7U << 8) | (7U << 12);
 
-    USART1_BRR = 0x8B;
-    USART1_CR1 = USART_CR1_UE | USART_CR1_TE;
+    USART3_CR1 = 0;
+    USART3_BRR = 0x8B;
+    USART3_CR1 = USART_CR1_UE | USART_CR1_TE;
 }
 
 static void delay_1s(void)
@@ -95,7 +97,7 @@ void main(void)
     unsigned tick = 0;
 
     uart_init();
-    uart_puts("Hello, World!\n");
+    uart_puts("Hello, World! USART3 PB10\n");
 
     while (1) {
         delay_1s();
