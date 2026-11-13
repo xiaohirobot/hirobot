@@ -10,13 +10,18 @@ SIZE    := $(GNU_BIN)/arm-none-eabi-size
 BUILD   := build
 TARGET  := $(BUILD)/hello
 LDSCRIPT := STM32F407VETX_FLASH.ld
-SRCS    := src/startup.c src/main.c
-OBJS    := $(SRCS:src/%.c=$(BUILD)/%.o)
 
 CFLAGS  := -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -ffreestanding \
-           -Wall -Wextra -g -O2 -ffunction-sections -fdata-sections
+           -Wall -Wextra -g -O2 -ffunction-sections -fdata-sections \
+           -Isrc
 LDFLAGS := -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -nostdlib \
            -T $(LDSCRIPT) -Wl,--gc-sections -lgcc
+
+SRCS    := src/startup.c src/main.c src/uart3.c \
+           src/demos/demo_uart3_log.c src/demos/demo_servo.c
+OBJS    := $(addprefix $(BUILD)/,$(notdir $(SRCS:.c=.o)))
+
+vpath %.c src src/demos
 
 .PHONY: all clean
 
@@ -25,7 +30,7 @@ all: $(TARGET).bin
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/%.o: src/%.c | $(BUILD)
+$(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGET).elf: $(OBJS)
