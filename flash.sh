@@ -26,14 +26,14 @@ if [ ! -e "$PORT" ]; then
     exit 1
 fi
 
-if [ ! -f build/hello.bin ]; then
-    echo "还没有 build/hello.bin，请先在本目录执行 make" >&2
+if [ ! -f build/hirobot.bin ]; then
+    echo "还没有 build/hirobot.bin，请先在本目录执行 make" >&2
     exit 1
 fi
 
 echo "请确认已经把 BOOT0 接到 3.3V，并按过一次 RESET。"
-echo "烧录端口：$PORT    文件：build/hello.bin -> 0x08000000"
+echo "烧录端口：$PORT    文件：build/hirobot.bin -> 0x08000000"
 echo "完成后把 BOOT0 拨回 GND，再按 RESET，用 115200 8N1 打开这个串口看 pulse。"
 
 "$PROG" -c port="$PORT" br=115200 P=EVEN \
-    -w build/hello.bin 0x08000000 -v -rst
+    -w build/hirobot.bin 0x08000000 -v -rst

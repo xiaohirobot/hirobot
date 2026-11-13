@@ -8,7 +8,7 @@ OBJCOPY := $(GNU_BIN)/arm-none-eabi-objcopy
 SIZE    := $(GNU_BIN)/arm-none-eabi-size
 
 BUILD   := build
-TARGET  := $(BUILD)/hello
+TARGET  := $(BUILD)/hirobot
 LDSCRIPT := STM32F407VETX_FLASH.ld
 
 CFLAGS  := -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -ffreestanding \
@@ -17,11 +17,12 @@ CFLAGS  := -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -ffreestanding \
 LDFLAGS := -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -nostdlib \
            -T $(LDSCRIPT) -Wl,--gc-sections -lgcc
 
-SRCS    := src/startup.c src/main.c src/uart3.c \
+SRCS    := src/startup.c src/main.c \
+           src/components/delay.c src/components/uart3.c src/components/servo.c \
            src/demos/demo_uart3_log.c src/demos/demo_servo.c
 OBJS    := $(addprefix $(BUILD)/,$(notdir $(SRCS:.c=.o)))
 
-vpath %.c src src/demos
+vpath %.c src src/components src/demos
 
 .PHONY: all clean
 

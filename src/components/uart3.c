@@ -1,4 +1,4 @@
-#include "uart3.h"
+#include "components/uart3.h"
 
 #include <stdint.h>
 
