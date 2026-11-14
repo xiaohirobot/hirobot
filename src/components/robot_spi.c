@@ -120,7 +120,7 @@ static void spi_poll(void)
 void robot_spi_run(void)
 {
     uart3_init();
-    uart3_puts("Robot dual link v3: SPI PD7 CS + I2C1 PB6/PB7 addr 0x32\n");
+    uart3_puts("Robot dual link v3.1: SPI PD7 CS + I2C1 PB8/PB9 addr 0x32\n");
     DEMCR |= 1u << 24; DWT_CYCCNT = 0; DWT_CTRL |= 1;
     robot_endpoint_init(&endpoint);
     init_pins();

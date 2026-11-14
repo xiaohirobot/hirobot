@@ -8,7 +8,7 @@
 #define GPIOB_OTYPER REG(0x40020404UL)
 #define GPIOB_OSPEEDR REG(0x40020408UL)
 #define GPIOB_PUPDR REG(0x4002040CUL)
-#define GPIOB_AFRL REG(0x40020420UL)
+#define GPIOB_AFRH REG(0x40020424UL)
 #define CR1 REG(0x40005400UL)
 #define CR2 REG(0x40005404UL)
 #define OAR1 REG(0x40005408UL)
@@ -49,12 +49,13 @@ void robot_i2c_init(void)
     RCC_AHB1ENR |= 1u << 1;
     RCC_APB1ENR |= 1u << 21;
     (void)RCC_AHB1ENR; (void)RCC_APB1ENR;
-    GPIOB_MODER = (GPIOB_MODER & ~((3u << 12) | (3u << 14))) | (2u << 12) | (2u << 14);
-    GPIOB_OTYPER |= (1u << 6) | (1u << 7);
-    GPIOB_OSPEEDR |= (3u << 12) | (3u << 14);
+    /* Kit BOARD_I2C_0 routes I2C1 to PB8 SCL / PB9 SDA, not PB6/PB7. */
+    GPIOB_MODER = (GPIOB_MODER & ~((3u << 16) | (3u << 18))) | (2u << 16) | (2u << 18);
+    GPIOB_OTYPER |= (1u << 8) | (1u << 9);
+    GPIOB_OSPEEDR |= (3u << 16) | (3u << 18);
     /* External pull-ups to 3.3 V are required; internal pulls keep unused pins idle. */
-    GPIOB_PUPDR = (GPIOB_PUPDR & ~((3u << 12) | (3u << 14))) | (1u << 12) | (1u << 14);
-    GPIOB_AFRL = (GPIOB_AFRL & ~((15u << 24) | (15u << 28))) | (4u << 24) | (4u << 28);
+    GPIOB_PUPDR = (GPIOB_PUPDR & ~((3u << 16) | (3u << 18))) | (1u << 16) | (1u << 18);
+    GPIOB_AFRH = (GPIOB_AFRH & ~((15u << 0) | (15u << 4))) | (4u << 0) | (4u << 4);
     robot_endpoint_init(&endpoint);
     reset_bus();
 }
