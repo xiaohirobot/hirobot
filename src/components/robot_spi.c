@@ -1,6 +1,7 @@
 #include <stdint.h>
 #define RCC_AHB1ENR (*(volatile uint32_t *)0x40023830UL)
 #define RCC_APB2ENR (*(volatile uint32_t *)0x40023844UL)
+#define RCC_APB2RSTR (*(volatile uint32_t *)0x40023824UL)
 
 #define GPIOB_MODER   (*(volatile uint32_t *)0x40020400UL)
 #define GPIOB_OSPEEDR (*(volatile uint32_t *)0x40020408UL)
@@ -22,6 +23,7 @@
 #define SPI_SR_BSY  (1U << 7)
 
 #define SPI_CR1_SPE (1U << 6)
+#define SPI_CR1_SSI (1U << 8)
 #define SPI_CR1_SSM (1U << 9)
 
 #define CS_PIN 7U
@@ -40,10 +42,22 @@ static int have_last,can_ready,servo_ready;
 #define DWT_CTRL (*(volatile uint32_t *)0xE0001000UL)
 #define DWT_CYCCNT (*(volatile uint32_t *)0xE0001004UL)
 static int cs_high(void) { return (GPIOD_IDR & (1u<<7))!=0; }
-static void spi_flush(void) {
-    SPI1_CR1 &= ~SPI_CR1_SPE;
-    (void)SPI1_DR;(void)SPI1_SR;
-    SPI1_CR1 |= SPI_CR1_SPE;
+static void spi_end_frame(void) {
+    /* PD7 is a GPIO, not hardware NSS. Explicitly deselect and disable SPI
+     * while CS is high so master startup/pinmux clocks cannot shift data. */
+    SPI1_CR1 = SPI_CR1_SSM | SPI_CR1_SSI;
+}
+static void spi_begin_frame(void) {
+    /* SPE toggling/DR reads do not provide a complete peripheral reset.
+     * Reset on every CS assertion, including after short/overrun frames.
+     * The master waits one RTOS tick after CS low before its first clock. */
+    RCC_APB2RSTR |= 1U << 12;
+    (void)RCC_APB2RSTR;
+    RCC_APB2RSTR &= ~(1U << 12);
+    (void)RCC_APB2RSTR;
+    SPI1_CR2 = 0;
+    SPI1_CR1 = SPI_CR1_SSM | SPI_CR1_SPE;
+    SPI1_DR = tx[0];
 }
 static void dispatch(void) {
     if(!rw_valid(rx) || rx[3]!=RW_SUBMIT) return;
@@ -89,6 +103,7 @@ static void init_pins(void)
     GPIOB_MODER &= ~((3U << (3U * 2U)) | (3U << (4U * 2U)) | (3U << (5U * 2U)));
     GPIOB_MODER |= (2U << (3U * 2U)) | (2U << (4U * 2U)) | (2U << (5U * 2U));
     GPIOB_PUPDR &= ~((3U << (3U * 2U)) | (3U << (4U * 2U)) | (3U << (5U * 2U)));
+    GPIOB_PUPDR |= 2U << (3U * 2U); /* Mode 0 SCK idle low when master resets. */
     GPIOB_OSPEEDR |= (3U << (3U * 2U)) | (3U << (4U * 2U)) | (3U << (5U * 2U));
     GPIOB_AFRL &= ~((0xFU << (3U * 4U)) | (0xFU << (4U * 4U)) | (0xFU << (5U * 4U)));
     GPIOB_AFRL |= (5U << (3U * 4U)) | (5U << (4U * 4U)) | (5U << (5U * 4U));
@@ -100,21 +115,20 @@ static void init_pins(void)
 
     SPI1_CR1 = 0;
     SPI1_CR2 = 0;
-    SPI1_CR1 = SPI_CR1_SSM;
-    spi_flush();
+    spi_end_frame();
 }
 
 
 void robot_spi_run(void) {
-    uart3_init();uart3_puts("SPI command bridge: modes 1,2,10,11; PD7 CS\n");
+    uart3_init();uart3_puts("SPI command bridge v2: modes 1,2,10,11; PD7 CS; per-frame reset\n");
     DEMCR|=1u<<24;DWT_CYCCNT=0;DWT_CTRL|=1;
     init_pins();
     rw_make(tx,RW_REPLY,0,0,0,0);tx[8]=RW_BUSY;rw_finish(tx);
     for(;;) {
         /* Drop a stuck-low transaction; resume only after CS is released. */
         if(!cs_high()) continue;
-        spi_flush();SPI1_DR=tx[0];
         while(cs_high()) { }
+        spi_begin_frame();
         uint32_t start=DWT_CYCCNT;
         unsigned n=0;int bad=0;
         while(!cs_high()) {
@@ -129,6 +143,7 @@ void robot_spi_run(void) {
         }
         /* Business executes only after the complete CS transaction ends.
          * Master guarantees >=200ms idle; no clocks during blocking CAN work. */
+        spi_end_frame();
         if(!bad && n==32 && cs_high()) dispatch();
     }
 }
