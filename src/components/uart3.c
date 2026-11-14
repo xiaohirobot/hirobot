@@ -19,9 +19,11 @@
 #define USART3_BRR   (*(volatile uint32_t *)0x40004808UL)
 #define USART3_CR1   (*(volatile uint32_t *)0x4000480CUL)
 
-#define USART_SR_TXE (1U << 7)
-#define USART_CR1_UE (1U << 13)
-#define USART_CR1_TE (1U << 3)
+#define USART_SR_RXNE (1U << 5)
+#define USART_SR_TXE  (1U << 7)
+#define USART_CR1_RE  (1U << 2)
+#define USART_CR1_TE  (1U << 3)
+#define USART_CR1_UE  (1U << 13)
 
 void uart3_init(void)
 {
@@ -38,7 +40,14 @@ void uart3_init(void)
 
     USART3_CR1 = 0;
     USART3_BRR = 0x8B;
-    USART3_CR1 = USART_CR1_UE | USART_CR1_TE;
+    USART3_CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+}
+
+int uart3_getc(void)
+{
+    while ((USART3_SR & USART_SR_RXNE) == 0) {
+    }
+    return (int)(USART3_DR & 0xFFU);
 }
 
 void uart3_putc(char c)

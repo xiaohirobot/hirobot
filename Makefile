@@ -20,7 +20,8 @@ LDFLAGS := -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -nostdlib \
 SRCS    := src/startup.c src/main.c \
            src/components/delay.c src/components/uart3.c src/components/servo.c \
            src/components/spi1_slave.c src/components/ws2812_light.c \
-           src/tests/demo_uart3_log.c src/tests/demo_servo.c src/tests/demo_spi.c \
+           src/tests/demo_uart3_log.c src/tests/demo_uart3_add.c \
+           src/tests/demo_servo.c src/tests/demo_spi.c \
            src/tests/demo_ws2812_light.c \
            src/main_robot.c
 OBJS    := $(addprefix $(BUILD)/,$(notdir $(SRCS:.c=.o)))
