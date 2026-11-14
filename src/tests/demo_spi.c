@@ -1,4 +1,4 @@
-#include "demos/demo_spi.h"
+#include "tests/demo_spi.h"
 
 #include "components/spi1_slave.h"
 #include "components/uart3.h"
@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 /*
- * 和 demo_servo_link 同一套从机，只应答、不驱动舵机。
+ * 和 main_robot 同一套从机，只应答、不驱动舵机。
  * SET 先记下通道和脉宽；查询拍再打印。打印放在查询里，
  * 避免挡住 SET 之后马上要预装的下一帧。
  */

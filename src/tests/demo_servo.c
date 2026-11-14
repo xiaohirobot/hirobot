@@ -1,4 +1,4 @@
-#include "demos/demo_servo.h"
+#include "tests/demo_servo.h"
 
 #include "components/delay.h"
 #include "components/servo.h"

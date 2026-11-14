@@ -1,4 +1,4 @@
-#include "demos/demo_uart3_log.h"
+#include "tests/demo_uart3_log.h"
 
 #include "components/delay.h"
 #include "components/uart3.h"

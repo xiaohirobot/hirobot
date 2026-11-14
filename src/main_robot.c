@@ -1,4 +1,4 @@
-#include "demos/demo_servo_link.h"
+#include "main_robot.h"
 
 #include "components/servo.h"
 #include "components/spi1_slave.h"
@@ -49,7 +49,7 @@ static void on_frame(const uint8_t *rx)
     spi1_slave_set_reply(seq, g_status, g_channel, g_pulse);
 }
 
-void demo_servo_link(void)
+void main_robot(void)
 {
     unsigned int channel;
 

@@ -1,4 +1,4 @@
-#include "demos/demo_servo_link.h"
+#include "main_robot.h"
 
 /*
  * 现在跑 SPI 从机舵机。换成别的演示时，改这里的调用。
@@ -8,5 +8,5 @@
  */
 void main(void)
 {
-    demo_servo_link();
+    main_robot();
 }
