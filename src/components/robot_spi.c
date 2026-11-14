@@ -33,11 +33,12 @@
 
 #include "components/robot_spi.h"
 #include "components/robot_wire.h"
-#include "components/servo_angle.h"
-#include "components/can1.h"
+#include "components/robot_command.h"
+#include "components/robot_i2c.h"
 #include "components/uart3.h"
-static uint8_t tx[32],rx[32],last[32];
-static int have_last,can_ready,servo_ready;
+static RobotEndpoint endpoint;
+#define tx endpoint.reply
+static uint8_t rx[RW_SIZE];
 #define DEMCR (*(volatile uint32_t *)0xE000EDFCUL)
 #define DWT_CTRL (*(volatile uint32_t *)0xE0001000UL)
 #define DWT_CYCCNT (*(volatile uint32_t *)0xE0001004UL)
@@ -58,39 +59,6 @@ static void spi_begin_frame(void) {
     SPI1_CR2 = 0;
     SPI1_CR1 = SPI_CR1_SSM | SPI_CR1_SPE;
     SPI1_DR = tx[0];
-}
-static void dispatch(void) {
-    if(!rw_valid(rx) || rx[3]!=RW_SUBMIT) return;
-    if(have_last && rw_get(last+4)==rw_get(rx+4)) {
-        /* A reused ID with different arguments must never look successful. */
-        if(memcmp(last,rx,32)!=0) {
-            rw_make(tx,RW_REPLY,rw_get(rx+4),rx[9],0,0);
-            tx[8]=RW_INVALID;rw_finish(tx);
-        }
-        return;
-    }
-    memcpy(last,rx,32);have_last=1;
-    int32_t a=(int32_t)rw_get(rx+10),b=(int32_t)rw_get(rx+14),x=0,y=0;
-    uint8_t mode=rx[9],status=RW_OK;
-    if(mode==1) {
-        if((b>0 && a>INT32_MAX-b)||(b<0 && a<INT32_MIN-b)) status=RW_INVALID;
-        else x=a+b;
-    } else if(mode==10) {
-        if(!servo_ready) servo_ready=servo_angle_init()==SERVO_OK?1:-1;
-        if(servo_ready<0 || servo_angle_move(a,b)!=SERVO_OK) {servo_stop_all();status=RW_SERVO;}
-        else {x=servo_angle_deg(0);y=servo_angle_deg(1);}
-    } else if(mode==2 || mode==11) {
-        uint8_t data[8],reply[8];
-        rw_put(data,(uint32_t)a);rw_put(data+4,(uint32_t)b);
-        if(!can_ready) can_ready=can1_init()==0?1:-1;
-        if(can_ready<0 || can1_send(mode,data,8)!=0) status=RW_REMOTE;
-        else {
-            int n=can1_recv_id(mode+1,reply,CAN1_TIMEOUT_MS);
-            if(n!=(mode==2?4:8)) status=RW_REMOTE;
-            else {x=(int32_t)rw_get(reply);if(n==8)y=(int32_t)rw_get(reply+4);}
-        }
-    } else status=RW_INVALID;
-    rw_make(tx,RW_REPLY,rw_get(rx+4),mode,x,y);tx[8]=status;rw_finish(tx);
 }
 static void init_pins(void)
 {
@@ -119,31 +87,46 @@ static void init_pins(void)
 }
 
 
-void robot_spi_run(void) {
-    uart3_init();uart3_puts("SPI command bridge v2: modes 1,2,10,11; PD7 CS; per-frame reset\n");
-    DEMCR|=1u<<24;DWT_CYCCNT=0;DWT_CTRL|=1;
-    init_pins();
-    rw_make(tx,RW_REPLY,0,0,0,0);tx[8]=RW_BUSY;rw_finish(tx);
-    for(;;) {
-        /* Drop a stuck-low transaction; resume only after CS is released. */
-        if(!cs_high()) continue;
-        while(cs_high()) { }
+static void spi_poll(void)
+{
+    static int active, wait_release = 1, bad;
+    static unsigned count;
+    static uint32_t started;
+    if (wait_release) {
+        if (cs_high()) wait_release = 0;
+        return;
+    }
+    if (!active) {
+        if (cs_high()) return;
         spi_begin_frame();
-        uint32_t start=DWT_CYCCNT;
-        unsigned n=0;int bad=0;
-        while(!cs_high()) {
-            if((uint32_t)(DWT_CYCCNT-start)>32000000u) {bad=1;break;}
-            if(SPI1_SR & SPI_SR_OVR) {bad=1;break;}
-            if(SPI1_SR & SPI_SR_RXNE) {
-                uint8_t value=(uint8_t)SPI1_DR;
-                if(n>=32) {bad=1;break;}
-                rx[n++]=value;
-                if(n<32) SPI1_DR=tx[n];
-            }
+        active = 1; bad = 0; count = 0; started = DWT_CYCCNT;
+    }
+    if ((uint32_t)(DWT_CYCCNT - started) > 32000000u || (SPI1_SR & SPI_SR_OVR)) {
+        spi_end_frame(); active = 0; wait_release = 1; return;
+    }
+    if (SPI1_SR & SPI_SR_RXNE) {
+        uint8_t value = (uint8_t)SPI1_DR;
+        if (count >= RW_SIZE) bad = 1;
+        else {
+            rx[count++] = value;
+            if (count < RW_SIZE) SPI1_DR = tx[count];
         }
-        /* Business executes only after the complete CS transaction ends.
-         * Master guarantees >=200ms idle; no clocks during blocking CAN work. */
-        spi_end_frame();
-        if(!bad && n==32 && cs_high()) dispatch();
+    }
+    if (cs_high()) {
+        spi_end_frame(); active = 0;
+        if (!bad && count == RW_SIZE) robot_command(&endpoint, rx);
+    }
+}
+void robot_spi_run(void)
+{
+    uart3_init();
+    uart3_puts("Robot dual link v3.1: SPI PD7 CS + I2C1 PB8/PB9 addr 0x32\n");
+    DEMCR |= 1u << 24; DWT_CYCCNT = 0; DWT_CTRL |= 1;
+    robot_endpoint_init(&endpoint);
+    init_pins();
+    robot_i2c_init();
+    for (;;) {
+        spi_poll();
+        robot_i2c_poll();
     }
 }
