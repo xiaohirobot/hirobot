@@ -1,7 +1,7 @@
-#include "tests/demo_ws2812_light.h"
+#include "tests/demo_servo.h"
 
 /*
- * 现在跑灯带变色。换成别的演示时，改这里的调用。
+ * 现在跑舵机扫动。换成别的演示时，改这里的调用。
  * 灯带整板同色是 ws2812_light()。
  * 舵机扫动演示是 demo_servo()。
  * 串口 tick 演示是 demo_uart3_log()。
@@ -10,5 +10,5 @@
  */
 void main(void)
 {
-    ws2812_light();
+    demo_servo();
 }
