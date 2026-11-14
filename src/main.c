@@ -1,8 +1,8 @@
 #include "components/robot_spi.h"
 
 /*
- * 现在跑 Wi-Fi SPI 命令分发。换成别的演示时，改这个 include 和下面的调用。
- * Wi-Fi SPI 命令分发是 robot_spi_run()。
+ * 现在跑 SPI / I2C 双接口命令处理。换成别的演示时，改这个 include 和下面的调用。
+ * SPI / I2C 双接口命令处理是 robot_spi_run()。
  * 灯带整板同色是 ws2812_light()。
  * 舵机扫动演示是 demo_servo()。
  * 串口 tick 演示是 demo_uart3_log()。

@@ -25,7 +25,7 @@ SRCS    := src/startup.c src/main.c \
            src/tests/demo_uart3_cmd.c src/tests/demo_can_slave.c \
            src/tests/demo_servo.c src/tests/demo_spi.c \
            src/tests/demo_ws2812_light.c \
-           src/main_robot.c src/components/robot_spi.c
+           src/main_robot.c src/components/robot_spi.c src/components/robot_command.c src/components/robot_i2c.c
 OBJS    := $(addprefix $(BUILD)/,$(notdir $(SRCS:.c=.o)))
 
 vpath %.c src src/components src/tests
