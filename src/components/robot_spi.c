@@ -29,6 +29,7 @@
 #define MAGIC1 0x5Au
 
 
+#include "components/robot_spi.h"
 #include "components/robot_wire.h"
 #include "components/servo_angle.h"
 #include "components/can1.h"

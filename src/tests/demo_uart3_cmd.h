@@ -10,7 +10,7 @@
  * 从机另烧 demo_can_slave()。CAN1 500 kbit/s，PD0 = RX，PD1 = TX。
  * 主机发送标准帧，ID = mode，8 字节小端 a、b。
  * 从机应答 ID = mode + 1。mode 2 的 DLC 为 4（和）；mode 11 的 DLC 为 8（两个角度）。
- * 溢出、舵机失败、超时或空帧时，主机回 err。
+ * 发送失败回 err tx。帧已发出但没有合法应答回 err rx。
  */
 
 #define DEMO_MODE_ADD_LOCAL    1

@@ -139,24 +139,28 @@ static int handle_remote(int32_t mode, int32_t a, int32_t b)
     int dlc;
 
     if (!g_can_ready) {
-        return 0;
+        uart3_puts("err tx\n");
+        return 1;
     }
     store_i32(tx, a);
     store_i32(tx + 4, b);
     if (can1_send((uint16_t)mode, tx, 8) != 0) {
-        return 0;
+        uart3_puts("err tx\n");
+        return 1;
     }
     dlc = can1_recv_id((uint16_t)(mode + 1), rx, CAN1_TIMEOUT_MS);
     if (mode == DEMO_MODE_ADD_REMOTE) {
         if (dlc != 4) {
-            return 0;
+            uart3_puts("err rx\n");
+            return 1;
         }
         put_i(load_i32(rx));
         uart3_puts("\n");
         return 1;
     }
     if (dlc != 8) {
-        return 0;
+        uart3_puts("err rx\n");
+        return 1;
     }
     put_i(load_i32(rx));
     uart3_putc(',');

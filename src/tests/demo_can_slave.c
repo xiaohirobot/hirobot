@@ -33,6 +33,8 @@ static int add_i(int32_t a, int32_t b, int32_t *sum)
     return 1;
 }
 
+static int g_servo_ready;
+
 static void servo_fail(void)
 {
     (void)can1_send((uint16_t)(DEMO_MODE_SERVO_REMOTE + 1), 0, 0);
@@ -74,10 +76,9 @@ void demo_can_slave(void)
         while (1) {
         }
     }
-    if (servo_angle_init() != SERVO_OK) {
+    g_servo_ready = (servo_angle_init() == SERVO_OK);
+    if (!g_servo_ready) {
         servo_stop_all();
-        while (1) {
-        }
     }
 
     while (1) {
@@ -91,6 +92,10 @@ void demo_can_slave(void)
         if (id == DEMO_MODE_ADD_REMOTE) {
             on_add(data);
         } else if (id == DEMO_MODE_SERVO_REMOTE) {
+            if (!g_servo_ready) {
+                (void)can1_send((uint16_t)(DEMO_MODE_SERVO_REMOTE + 1), 0, 0);
+                continue;
+            }
             on_servo(data);
         }
     }
