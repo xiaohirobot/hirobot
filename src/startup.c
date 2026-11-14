@@ -10,6 +10,7 @@ extern uint32_t _estack;
 void Reset_Handler(void);
 void Default_Handler(void);
 void main(void);
+void DMA2_Stream1_IRQHandler(void);
 
 __attribute__((section(".isr_vector"), used))
 const void *const g_pfnVectors[] = {
@@ -26,6 +27,9 @@ const void *const g_pfnVectors[] = {
     0,
     Default_Handler, /* PendSV */
     Default_Handler, /* SysTick */
+    /* IRQ 0..56 用默认处理。IRQ 57（向量下标 73）是 DMA2 Stream1，灯带用。 */
+    [16 ... 72] = Default_Handler,
+    [73] = DMA2_Stream1_IRQHandler,
 };
 
 void Reset_Handler(void)
