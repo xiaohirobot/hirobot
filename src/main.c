@@ -1,17 +1,7 @@
-#include "main_robot.h"
-#include "tests/demo_can_slave.h"
-#include "tests/demo_servo.h"
-#include "tests/demo_spi.h"
-#include "tests/demo_uart3_add.h"
-#include "tests/demo_uart3_cmd.h"
-#include "tests/demo_uart3_log.h"
-#include "tests/demo_ws2812_light.h"
-
-/* Wi-Fi -> ECW SPI master -> STM32 command dispatcher. */
-extern void robot_spi_run(void);
+#include "components/robot_spi.h"
 
 /*
- * 现在跑 CAN 从机。换成别的演示时，只改下面这一行调用。
+ * 现在跑 Wi-Fi SPI 命令分发。换成别的演示时，改这个 include 和下面的调用。
  * Wi-Fi SPI 命令分发是 robot_spi_run()。
  * 灯带整板同色是 ws2812_light()。
  * 舵机扫动演示是 demo_servo()。
@@ -24,5 +14,5 @@ extern void robot_spi_run(void);
  */
 void main(void)
 {
-    demo_can_slave();
+    robot_spi_run();
 }
