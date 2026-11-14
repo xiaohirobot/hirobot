@@ -15,7 +15,7 @@ CFLAGS  := -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -ffreestanding \
            -Wall -Wextra -g -O2 -ffunction-sections -fdata-sections \
            -Isrc
 LDFLAGS := -mcpu=cortex-m4 -mthumb -mfloat-abi=soft -nostdlib \
-           -T $(LDSCRIPT) -Wl,--gc-sections -lgcc
+           -T $(LDSCRIPT) -Wl,--gc-sections
 
 SRCS    := src/startup.c src/main.c \
            src/components/delay.c src/components/uart3.c src/components/servo.c \
@@ -25,7 +25,7 @@ SRCS    := src/startup.c src/main.c \
            src/tests/demo_uart3_cmd.c src/tests/demo_can_slave.c \
            src/tests/demo_servo.c src/tests/demo_spi.c \
            src/tests/demo_ws2812_light.c \
-           src/main_robot.c
+           src/main_robot.c src/components/robot_spi.c
 OBJS    := $(addprefix $(BUILD)/,$(notdir $(SRCS:.c=.o)))
 
 vpath %.c src src/components src/tests
@@ -41,7 +41,7 @@ $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGET).elf: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -lgcc -lc -o $@
 	$(SIZE) $@
 
 $(TARGET).bin: $(TARGET).elf
