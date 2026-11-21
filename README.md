@@ -135,3 +135,9 @@ make && ./flash.sh
 ```
 
 该流程使用 `build/hirobot.bin`，与 Windows 的产物路径不同；`flash.sh` 本身不编译。BOOT0 和 RESET 的操作同上。
+
+## 获奖
+
+小酷在「莫测未来 × 清华创客硬件黑客松」（11 月 13–15 日）获得二等奖。
+
+![莫测未来 × 清华创客硬件黑客松](docs/images/hackathon.jpg)
