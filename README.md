@@ -1,6 +1,10 @@
 # hirobot
 
-小酷的 STM32F407 执行固件。小酷是四自由度桌面机器人；这个仓库烧录到两块相同的 STM32 上，负责接收命令并驱动舵机。
+小酷是四自由度桌面机器人；
+
+[![小酷与小林](https://img.youtube.com/vi/TLvZFpn7x3Y/hqdefault.jpg)](https://www.youtube.com/shorts/TLvZFpn7x3Y)
+
+这个仓库是小酷的 STM32F407 执行固件，烧录到两块相同的 STM32 上，负责接收命令并驱动舵机。
 
 ## 小酷是什么
 
@@ -13,6 +17,8 @@
 
 下底座固定，双臂各自驱动。外壳是拓竹打印的 PLA，关节件由造物时代 CNC 加工，舵机为 MG995，脸上的表情屏是 iPhone 13。
 
+![四自由度结构与坐标](docs/images/structure.jpg)
+
 手机或电脑通过 Wi-Fi / HTTP 把指令交给 ESP32。ESP32 再分成三条执行路径：
 
 ```mermaid
@@ -22,6 +28,8 @@ flowchart LR
   ecw -->|I2C| board2["STM32 ② 舵机 3-4"]
   ecw -->|PWM| arms["ESP32 本地 舵机 5-6 双臂"]
 ```
+
+![结构组成与硬件控制](docs/images/hardware.jpg)
 
 ## 这个仓库做什么
 
@@ -80,7 +88,7 @@ flowchart TB
 
 ## 演示
 
-[![小酷与小林](https://img.youtube.com/vi/TLvZFpn7x3Y/hqdefault.jpg)](https://www.youtube.com/shorts/TLvZFpn7x3Y)
+![眼神与动作](docs/images/interaction.jpg)
 
 ## Windows 编译与烧录
 
