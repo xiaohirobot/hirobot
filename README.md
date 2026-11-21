@@ -1,7 +1,8 @@
 # hirobot
 
-小酷是四自由度桌面机器人；
+小酷是会聊天、会跳舞的四自由度桌面机器人。
 
+演示视频:
 [![小酷与小林](https://img.youtube.com/vi/TLvZFpn7x3Y/hqdefault.jpg)](https://www.youtube.com/shorts/TLvZFpn7x3Y)
 
 这个仓库是小酷的 STM32F407 执行固件，烧录到两块相同的 STM32 上，负责接收命令并驱动舵机。
