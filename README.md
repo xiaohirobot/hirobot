@@ -1,14 +1,86 @@
 # hirobot
 
-STM32F407 双接口舵机固件。两块 STM32 使用同一份程序，由 ECW 按命令选择通信通道：
+小酷的 STM32F407 执行固件。小酷是四自由度桌面机器人；这个仓库烧录到两块相同的 STM32 上，负责接收命令并驱动舵机。
 
-| ECW 命令 | 目标 |
+## 小酷是什么
+
+小酷用抬头、转体和双臂摆动回应人。四个转动自由度是：
+
+- q1 头部俯仰，绕 Y1 轴抬头、低头
+- q2 左臂摆动，绕 Y2 轴前后摆
+- q3 右臂摆动，绕 Y3 轴前后摆
+- q4 底座回转，绕 Z0 轴左右转身
+
+下底座固定，双臂各自驱动。外壳是拓竹打印的 PLA，关节件由造物时代 CNC 加工，舵机为 MG995，脸上的表情屏是 iPhone 13。
+
+手机或电脑通过 Wi-Fi / HTTP 把指令交给 ESP32。ESP32 再分成三条执行路径：
+
+```mermaid
+flowchart LR
+  phone[手机或电脑] -->|Wi-Fi HTTP| ecw[ESP32]
+  ecw -->|SPI| board1["STM32 ① 舵机 1-2 回转与俯仰"]
+  ecw -->|I2C| board2["STM32 ② 舵机 3-4"]
+  ecw -->|PWM| arms["ESP32 本地 舵机 5-6 双臂"]
+```
+
+## 这个仓库做什么
+
+本仓库是上图里两块 STM32 的固件。两块板烧同一份程序，每块用 PA2、PA3 驱动两路舵机。ESP32 发命令时选择 SPI 或 I²C；默认程序 `robot_spi_run()` 在主循环里轮询这两个接口。
+
+线上是 32 字节帧。`mode 10` 把两路相对转角写成脉宽，0° 对应 1500 µs，范围 ±90°。`mode 1` 做加法诊断，不驱动舵机。
+
+```mermaid
+flowchart TB
+  voice[语音或指令] --> plan[大模型与动作编排]
+  plan --> ecw[ESP32]
+  face[iPhone 表情] --- voice
+  ecw --> fw["本仓库 STM32F407 固件"]
+  fw --> servo[每块板两路舵机]
+```
+
+语音理解、动作编排、Wi-Fi 和表情在手机与 ESP32 侧。ESP32 命令 `11,a,b` 发到 SPI 板，`12,a,b` 发到 I²C 板；`13,a,b` 由 ESP32 本地 PWM 驱动双臂。`a,b` 是两路相对转角，单位为度。`1,a,b` 和 `2,a,b` 分别是 SPI 板、I²C 板的加法诊断。
+
+| ESP32 命令 | 目标 |
 |---|---|
 | `11,a,b` | SPI 连接的 STM32 两路舵机 |
 | `12,a,b` | I²C 连接的 STM32 两路舵机 |
-| `13,a,b` | ECW 本地两路舵机，不经过 STM32 |
+| `13,a,b` | ESP32 本地两路舵机，由 ESP32 自己的 PWM 输出 |
 
-`a,b` 为两路相对转角，单位为度。`1,a,b` 和 `2,a,b` 分别用于 SPI、I²C 板的加法诊断。
+## 模块
+
+默认固件从 `main()` 进入 `robot_spi_run()`。CAN、串口主机和灯带在源码里，要改 [`src/main.c`](src/main.c) 的调用再单独烧录。
+
+```mermaid
+flowchart TB
+  main["main 默认 robot_spi_run"]
+  main --> spi[robot_spi SPI 从机]
+  main --> i2c[robot_i2c I2C 从机]
+  spi --> cmd[robot_command]
+  i2c --> cmd
+  cmd --> wire[robot_wire 帧格式]
+  cmd --> angle[servo_angle 相对角度]
+  angle --> servo[servo 脉宽 PA2 PA3]
+  main --> uart[uart3 调试输出]
+  demos["改 main.c 再烧录的演示"]
+  demos --> can[CAN 从机]
+  demos --> uartHost[UART 主机命令]
+  demos --> led[WS2812 灯带]
+```
+
+| 模块 | 文件 | 默认固件 |
+|---|---|---|
+| SPI 从机 | [`src/components/robot_spi.c`](src/components/robot_spi.c) | 是 |
+| I²C 从机 | [`src/components/robot_i2c.c`](src/components/robot_i2c.c) | 是 |
+| 命令处理 | [`src/components/robot_command.c`](src/components/robot_command.c) | 是 |
+| 32 字节帧 | [`src/components/robot_wire.h`](src/components/robot_wire.h) | 是 |
+| 相对角度 | [`src/components/servo_angle.c`](src/components/servo_angle.c) | 是 |
+| 舵机脉宽 | [`src/components/servo.c`](src/components/servo.c) | 是 |
+| 调试串口 | [`src/components/uart3.c`](src/components/uart3.c) | 是 |
+| CAN、串口主机、灯带等演示 | [`src/tests/`](src/tests/) | 改 `main` 后烧录 |
+
+## 演示
+
+[![小酷与小林](https://img.youtube.com/vi/TLvZFpn7x3Y/hqdefault.jpg)](https://www.youtube.com/shorts/TLvZFpn7x3Y)
 
 ## Windows 编译与烧录
 
